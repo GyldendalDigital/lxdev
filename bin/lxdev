@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+require 'lxdev'
+
+if ARGV.empty?
+  puts "Needs an argument"
+  exit 1
+end
+
+case ARGV.first
+when 'setup'
+  unless LxDev.setup()
+    puts "Setup aborted"
+  end
+else
+  puts 'no can do'
+end
+
