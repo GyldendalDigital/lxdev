@@ -1,0 +1,8 @@
+box:
+  name: huba
+  user: huba
+  image: ubuntu:bionic
+  ports:
+    3000: 3005
+  folders:
+    ".": "/home/huba/lxdev"

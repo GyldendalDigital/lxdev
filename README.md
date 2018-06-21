@@ -3,11 +3,12 @@
 
 ## TODO
 * Automatic creation of sudoers file
-* YAML config with container name, forwarded ports, mapped folders etc
-* Create user within container
-* Insertion of developer's ssh key in container
+* ~~YAML config with container name, forwarded ports, mapped folders etc~~
+* ~~Create user within container~~
+* ~~Insertion of developer's ssh key in container~~
 * Some support for automatic provisioning
-* Keep it lightweight and simple
+* 'status' command
+* Create a gem
 
 ## Architectural decisions
 * Simple commandline based interface like vagrant

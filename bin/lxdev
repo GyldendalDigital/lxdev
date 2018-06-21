@@ -6,12 +6,21 @@ if ARGV.empty?
   exit 1
 end
 
+lxdev = LxDev.setup()
+
 case ARGV.first
-when 'setup'
-  unless LxDev.setup()
-    puts "Setup aborted"
-  end
+when 'up'
+  lxdev.up()
+when 'status'
+  lxdev.status()
+when 'ssh'
+  lxdev.ssh()
+when 'halt'
+  lxdev.halt()
+when 'destroy'
+  lxdev.destroy()
 else
   puts 'no can do'
 end
 
+lxdev.save_state
