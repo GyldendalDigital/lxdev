@@ -115,7 +115,7 @@ class LxDev
     end
     STDOUT.sync = true
     provisioning.each do |cmd|
-      IO.popen("sudo lxc exec #{@name} -- #{cmd}", err: [:child, :out]) do |cmd_output|
+      IO.popen("sudo lxc exec #{@name} -- /bin/sh -c '#{cmd}'", err: [:child, :out]) do |cmd_output|
         cmd_output.each do |line|
           puts line
         end
