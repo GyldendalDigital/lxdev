@@ -8,7 +8,7 @@
 * ~~Insertion of developer's ssh key in container~~
 * ~~Some support for automatic provisioning~~
 * ~~'status' command~~
-* Create a gem
+* ~~Create a gem~~
 
 ## Architectural decisions
 * Simple commandline based interface like vagrant
@@ -18,6 +18,12 @@
 ## Nice to have
 * Take advantage of snapshots if possible
 * Support for distros other than Ubuntu
+
+## Building gem
+```
+gem build lxdev.gemspec
+gem install lxdev-0.0.1.gem
+```
 
 ## Config examples
 
