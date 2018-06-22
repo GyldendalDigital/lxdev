@@ -7,7 +7,7 @@
 * ~~Create user within container~~
 * ~~Insertion of developer's ssh key in container~~
 * Some support for automatic provisioning
-* 'status' command
+* ~~'status' command~~
 * Create a gem
 
 ## Architectural decisions

@@ -2,6 +2,7 @@ require 'yaml'
 require 'json'
 require 'pp'
 require 'pry'
+require 'terminal-table'
 
 class LxDev
   WHITELISTED_COMMANDS = ["lxc", "redir"]
@@ -38,9 +39,23 @@ class LxDev
   end
 
   def status
-    pp get_container_status
-    puts get_container_ip
-    binding.pry
+    s = get_container_status
+    folders = s.first['devices'].map{|name, folders| [name,"#{folders['source']} => #{folders['path']}"] if folders['source']}.compact
+    table = Terminal::Table.new do |t|
+      t.add_row ['Name', s.first['name']]
+      t.add_row ['Status', s.first['status']]
+      t.add_row ['IP', get_container_ip]
+      t.add_row ['Image', @image]
+      t.add_separator
+      folders.each do |folder|
+        t.add_row folder
+      end
+      t.add_separator
+      @config['box']['ports'].each do |guest,host|
+        t.add_row ['Forwarded port', "guest: #{guest} host: #{host}"]
+      end
+    end
+    puts table
   end
 
   def up
