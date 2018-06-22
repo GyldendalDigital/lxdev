@@ -1,28 +1,67 @@
 #!/usr/bin/env ruby
 require 'lxdev'
+require 'optparse'
 
-if ARGV.empty?
-  puts "Needs an argument"
-  exit 1
+def option_parser
+  opt_parser = OptionParser.new do |opts|
+    opts.banner = "Usage: lxdev [options] command"
+
+    opts.on("-h", "--help", "Prints this help") do
+      puts opts
+      exit
+    end
+
+    opts.on("-v", "--version", "Prints the version") do
+      puts "Version #{LxDev::VERSION}"
+      exit
+    end
+
+  end
+  opt_parser.separator ""
+  opt_parser.separator <<-EOS
+Commands:
+up          Bring container up
+status      Show status of the container
+ssh         Log into the container 
+halt        Stop the container
+destroy     Destroy the container 
+provision   Run provisioning commands from YAML file
+
+EOS
+  opt_parser.parse!()
+
 end
 
+
+def execute_main_command(lxdev)
+  if ARGV.empty?
+    puts "No arguments.\nRun \"lxdev --help\" for info"
+    exit 1
+  end
+
+  case ARGV.first
+  when 'up'
+    lxdev.up()
+  when 'status'
+    lxdev.status()
+  when 'ssh'
+    lxdev.ssh()
+  when 'halt'
+    lxdev.halt()
+  when 'destroy'
+    lxdev.destroy()
+  when 'provision'
+    lxdev.provision()
+  else
+    puts "Unknown command.\nRun \"lxdev --help\" for info"
+  end
+end
+
+
+
+option_parser
 lxdev = LxDev.setup()
-
-case ARGV.first
-when 'up'
-  lxdev.up()
-when 'status'
-  lxdev.status()
-when 'ssh'
-  lxdev.ssh()
-when 'halt'
-  lxdev.halt()
-when 'destroy'
-  lxdev.destroy()
-when 'provision'
-  lxdev.provision()
-else
-  puts 'no can do'
+if lxdev
+  execute_main_command(lxdev)
+  lxdev.save_state
 end
-
-lxdev.save_state
