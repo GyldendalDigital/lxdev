@@ -7,6 +7,7 @@ require 'terminal-table'
 class LxDev
   WHITELISTED_COMMANDS = ["lxc", "redir"]
   BOOT_TIMEOUT = 30
+  VERSION = '0.0.1'
 
   def initialize
     @uid=%x{id -u}.chomp

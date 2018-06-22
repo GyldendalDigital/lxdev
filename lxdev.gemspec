@@ -1,6 +1,10 @@
+# Include lib to fetch version number
+$:.push File.expand_path("../lib", __FILE__)
+require "lxdev"
+
 Gem::Specification.new do |spec|
   spec.name        = 'lxdev'
-  spec.version     = '0.0.1'
+  spec.version     = LxDev::VERSION
   spec.date        = '2018-06-22'
   spec.summary     = 'Automagic development environment with LXD'
   spec.description = 'Lightweight vagrant-like system using LXD'
