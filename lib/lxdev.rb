@@ -15,6 +15,7 @@ class LxDev
     @name = @config['box']['name']
     @image = @config['box']['image']
     @user = @config['box']['user']    
+    @ports = @config['box']['ports'] || {}
     Dir.mkdir('.lxdev') unless File.directory?('.lxdev')
     begin
       @state = YAML.load_file('.lxdev/state')
@@ -51,7 +52,7 @@ class LxDev
         t.add_row folder
       end
       t.add_separator
-      @config['box']['ports'].each do |guest,host|
+      @ports.each do |guest,host|
         t.add_row ['Forwarded port', "guest: #{guest} host: #{host}"]
       end
     end
@@ -59,12 +60,14 @@ class LxDev
   end
 
   def up
+    do_provision = false
     unless @state.empty?
       puts "Container state .lxdev/state exists, is it running? If not it might have stopped unexpectedly. Please remove the file before starting."
       exit 1
     end
     if get_container_status.empty?
       create_container
+      do_provision = true
     else
       if get_container_status.first['status'] == 'Running'
         puts "#{@name} is already running!"
@@ -77,7 +80,8 @@ class LxDev
     wait_for_boot
     @state['status'] = 'running'
     puts "Forwarding ports..."
-    forward_ports(@config['box']['ports'])
+    forward_ports(@ports)
+    provision if do_provision
   end
 
   def halt
@@ -98,6 +102,28 @@ class LxDev
     end
     ssh_command = "ssh -o StrictHostKeyChecking=no -t #{@user}@#{get_container_ip} bash --noprofile"
     exec ssh_command
+  end
+
+  def provision
+    if get_container_status.first['status'] != 'Running'
+      puts "#{@name} is not running!"
+      exit 1
+    end
+    provisioning = @config['box']['provisioning']
+    if provisioning.nil?
+      puts "Nothing to do"
+      return
+    end
+    puts "Provisioning #{@name}..."
+    STDOUT.sync = true
+    provisioning.each do |cmd|
+      IO.popen("sudo lxc exec #{@name} -- /bin/sh -c '#{cmd}'", err: [:child, :out]) do |cmd_output|
+        cmd_output.each do |line|
+          puts line
+        end
+      end
+    end
+    STDOUT.sync = false
   end
 
   private

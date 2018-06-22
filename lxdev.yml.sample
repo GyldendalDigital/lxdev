@@ -3,6 +3,9 @@ box:
   user: huba
   image: ubuntu:bionic
   ports:
-    3000: 3005
+    80: 9999
   folders:
     ".": "/home/huba/lxdev"
+  provisioning:
+    - apt-get update
+    - apt-get -y install nginx

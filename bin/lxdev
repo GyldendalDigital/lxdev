@@ -19,6 +19,8 @@ when 'halt'
   lxdev.halt()
 when 'destroy'
   lxdev.destroy()
+when 'provision'
+  lxdev.provision()
 else
   puts 'no can do'
 end
