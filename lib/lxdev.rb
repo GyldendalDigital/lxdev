@@ -114,6 +114,7 @@ class LxDev
       puts "Nothing to do"
       return
     end
+    puts "Provisioning #{@name}..."
     STDOUT.sync = true
     provisioning.each do |cmd|
       IO.popen("sudo lxc exec #{@name} -- /bin/sh -c '#{cmd}'", err: [:child, :out]) do |cmd_output|
