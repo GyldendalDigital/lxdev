@@ -59,12 +59,14 @@ class LxDev
   end
 
   def up
+    do_provision = false
     unless @state.empty?
       puts "Container state .lxdev/state exists, is it running? If not it might have stopped unexpectedly. Please remove the file before starting."
       exit 1
     end
     if get_container_status.empty?
       create_container
+      do_provision = true
     else
       if get_container_status.first['status'] == 'Running'
         puts "#{@name} is already running!"
@@ -78,6 +80,7 @@ class LxDev
     @state['status'] = 'running'
     puts "Forwarding ports..."
     forward_ports(@config['box']['ports'])
+    provision if do_provision
   end
 
   def halt
