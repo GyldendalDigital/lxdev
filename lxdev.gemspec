@@ -10,4 +10,7 @@ Gem::Specification.new do |spec|
   spec.homepage    = 'https://github.com/GyldendalDigital/lxdev'
   spec.license     = 'MIT'
   spec.executables << 'lxdev'
+
+  spec.add_dependency 'json', '~> 2.1'
+  spec.add_dependency 'terminal-table', '~> 1.8'
 end
