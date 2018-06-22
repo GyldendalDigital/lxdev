@@ -205,6 +205,8 @@ class LxDev
     %x{sudo lxc exec #{@name} -- chmod 0700 /home/#{user}/.ssh}
     %x{ssh-add -L | sudo lxc exec #{@name} tee /home/#{user}/.ssh/authorized_keys}
     %x{sudo lxc exec #{@name} -- chown -R #{user} /home/#{user}/.ssh}
+    %x{printf "#{user} ALL=(ALL) NOPASSWD: ALL\n" | sudo lxc exec #{@name} -- tee -a /etc/sudoers}
+    %x{sudo lxc exec #{@name} -- chmod 0440 /etc/sudoers}
   end
 
   def wait_for_boot
