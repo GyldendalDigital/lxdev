@@ -15,6 +15,7 @@ class LxDev
     @name = @config['box']['name']
     @image = @config['box']['image']
     @user = @config['box']['user']    
+    @ports = @config['box']['ports'] || {}
     Dir.mkdir('.lxdev') unless File.directory?('.lxdev')
     begin
       @state = YAML.load_file('.lxdev/state')
@@ -51,7 +52,7 @@ class LxDev
         t.add_row folder
       end
       t.add_separator
-      @config['box']['ports'].each do |guest,host|
+      @ports.each do |guest,host|
         t.add_row ['Forwarded port', "guest: #{guest} host: #{host}"]
       end
     end
@@ -79,7 +80,7 @@ class LxDev
     wait_for_boot
     @state['status'] = 'running'
     puts "Forwarding ports..."
-    forward_ports(@config['box']['ports'])
+    forward_ports(@ports)
     provision if do_provision
   end
 
