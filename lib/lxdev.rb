@@ -129,7 +129,7 @@ class LxDev
 
   private
   def self.lxd_initialized?
-    %x{sudo lxc config show | grep 'config: {}'}
+    %x{sudo lxc info | grep 'lxd init'}
     $?.exitstatus != 0
   end
 
