@@ -41,11 +41,13 @@ class LxDev
   end
 
   def status
-    s = get_container_status
-    folders = s.first['devices'].map{|name, folders| [name,"#{folders['source']} => #{folders['path']}"] if folders['source']}.compact
+    ensure_container_created
+
+    container_status = get_container_status
+    folders = container_status.first['devices'].map{|name, folders| [name,"#{folders['source']} => #{folders['path']}"] if folders['source']}.compact
     table = Terminal::Table.new do |t|
-      t.add_row ['Name', s.first['name']]
-      t.add_row ['Status', s.first['status']]
+      t.add_row ['Name', container_status.first['name']]
+      t.add_row ['Status', container_status.first['status']]
       t.add_row ['IP', get_container_ip]
       t.add_row ['Image', @image]
       t.add_separator
@@ -86,16 +88,19 @@ class LxDev
   end
 
   def halt
+    ensure_container_created
     %x{sudo lxc stop #{@name}}
     cleanup_forwarded_ports
     remove_state
   end
 
   def destroy
+    ensure_container_created
     %x{sudo lxc delete #{@name}}
   end
 
   def ssh(*args)
+    ensure_container_created
     host = get_container_ip
     if host.nil?
       puts "#{@name} doesn't seem to be running."
@@ -106,6 +111,7 @@ class LxDev
   end
 
   def provision
+    ensure_container_created
     if get_container_status.first['status'] != 'Running'
       puts "#{@name} is not running!"
       exit 1
@@ -131,6 +137,14 @@ class LxDev
   def self.lxd_initialized?
     %x{sudo lxc info | grep 'lxd init'}
     $?.exitstatus != 0
+  end
+
+  def ensure_container_created
+    container_status = get_container_status
+    unless container_status.size > 0
+      puts "Container not created yet. Run lxdev up"
+      exit(0)
+    end
   end
 
   def remove_state
