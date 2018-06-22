@@ -100,6 +100,27 @@ class LxDev
     exec ssh_command
   end
 
+  def provision
+    if get_container_status.first['status'] != 'Running'
+      puts "#{@name} is not running!"
+      exit 1
+    end
+    provisioning = @config['box']['provisioning']
+    if provisioning.nil?
+      puts "Nothing to do"
+      return
+    end
+    STDOUT.sync = true
+    provisioning.each do |cmd|
+      IO.popen("sudo lxc exec #{@name} -- #{cmd}", err: [:child, :out]) do |cmd_output|
+        cmd_output.each do |line|
+          puts line
+        end
+      end
+    end
+    STDOUT.sync = false
+  end
+
   private
   def self.lxd_initialized?
     %x{sudo lxc config show | grep 'config: {}'}
