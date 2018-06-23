@@ -53,7 +53,12 @@ def execute_main_command(lxdev)
   when 'provision'
     lxdev.provision()
   when 'exec'
-    lxdev.execute(ARGV[1..-1].join(" "))
+    command = ARGV[1..-1].join(" ")
+    if LxDev::SHELLS.include?(command)
+      lxdev.execute(command, interactive: true)
+    else
+      lxdev.execute(command)
+    end
   else
     puts "Unknown command.\nRun \"lxdev --help\" for info"
   end
