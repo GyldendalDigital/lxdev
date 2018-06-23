@@ -1,0 +1,31 @@
+name: lxdev
+version: git
+summary: LxDev development environment container management with LXD
+description: |
+  Command line client interface to manage LXD containers for
+  development. It handles port mapping, folder mounts and
+  provisioning.
+grade: devel
+confinement: classic
+
+apps:
+  lxdev:
+    environment:
+      RUBYLIB: $SNAP/usr/lib/ruby/2.5.0:$SNAP/usr/lib/x86_64-linux-gnu/ruby/2.5.0
+      GEM_HOME: $SNAP/gems
+      GEM_PATH: $SNAP
+    command: ruby -I$SNAP/lib $SNAP/bin/lxdev
+
+parts:
+  lxdev.rb:
+    source: git@github.com:GyldendalDigital/lxdev.git
+    source-type: git
+    plugin: nil
+    override-build: |
+      echo $SNAPCRAFT_PART_INSTALL
+      gem install terminal-table json -i $SNAPCRAFT_PART_INSTALL
+      GEM_PATH=$SNAPCRAFT_PART_INSTALL gem build lxdev.gemspec
+      gem install lxdev-*.gem -i $SNAPCRAFT_PART_INSTALL
+      snapcraftctl build
+    build-packages: [gcc, libc6-dev, make, ruby-dev]
+    stage-packages: [ruby,libc6]
