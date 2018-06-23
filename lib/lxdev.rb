@@ -100,14 +100,14 @@ class LxDev
     %x{sudo lxc delete #{@name}}
   end
 
-  def ssh(*args)
+  def ssh(args)
     ensure_container_created
     host = get_container_ip
     if host.nil?
       puts "#{@name} doesn't seem to be running."
       exit 1
     end
-    ssh_command = "ssh -o StrictHostKeyChecking=no -t #{@user}@#{get_container_ip} bash --noprofile"
+    ssh_command = "ssh -o StrictHostKeyChecking=no -t #{@user}@#{get_container_ip} #{args.empty? ? 'bash --noprofile' : args.join(' ')}"
     exec ssh_command
   end
 
