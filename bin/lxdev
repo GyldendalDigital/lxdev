@@ -26,7 +26,7 @@ ssh         Log into the container
 halt        Stop the container
 destroy     Destroy the container 
 provision   Run provisioning commands from YAML file
-
+exec        Run command as root in container
 EOS
   opt_parser.parse!()
 
@@ -52,6 +52,8 @@ def execute_main_command(lxdev)
     lxdev.destroy()
   when 'provision'
     lxdev.provision()
+  when 'exec'
+    lxdev.execute(ARGV[1..-1].join(" "))
   else
     puts "Unknown command.\nRun \"lxdev --help\" for info"
   end
