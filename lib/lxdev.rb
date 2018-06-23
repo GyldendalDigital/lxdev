@@ -107,7 +107,7 @@ class LxDev
       puts "#{@name} doesn't seem to be running."
       exit 1
     end
-    ssh_command = "ssh -o StrictHostKeyChecking=no -t #{@user}@#{get_container_ip} #{args.empty? ? 'bash --noprofile' : args.join(' ')}"
+    ssh_command = "ssh -o StrictHostKeyChecking=no -t #{@user}@#{get_container_ip} #{args.empty? ? 'bash --noprofile' : "'#{args.join(' ')}'"}"
     exec ssh_command
   end
 
