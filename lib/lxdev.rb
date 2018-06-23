@@ -189,12 +189,12 @@ class LxDev
 
   def add_subuid_and_subgid
     need_restart = false
-    %x{sudo grep -q 'root:#{@uid}:1' /etc/subuid}
+    %x{grep -q 'root:#{@uid}:1' /etc/subuid}
     if $?.exitstatus != 0
       %x{echo 'root:#{@uid}:1' | sudo tee -a /etc/subuid}
       need_restart = true
     end
-    %x{sudo grep -q 'root:#{@gid}:1' /etc/subgid}
+    %x{grep -q 'root:#{@gid}:1' /etc/subgid}
     if $?.exitstatus != 0
       %x{echo 'root:#{@gid}:1' | sudo tee -a /etc/subgid}
       need_restart = true
