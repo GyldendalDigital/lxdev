@@ -1,14 +1,12 @@
 require 'yaml'
 require 'json'
-require 'pp'
-require 'pry'
 require 'terminal-table'
 
 class LxDev
   WHITELISTED_SUDO_COMMANDS = ["lxc", "redir", "kill"]
   SHELLS = ["bash", "zsh", "sh", "csh", "tcsh", "ash"]
   BOOT_TIMEOUT = 30
-  VERSION = '0.0.1'
+  VERSION = '0.1.0'
 
   def initialize
     @uid=%x{id -u}.chomp

@@ -2,7 +2,7 @@
 ###### Automagic dev environment using LXD
 
 ## TODO
-* Automatic creation of sudoers file
+* ~~Automatic creation of sudoers file~~
 * ~~YAML config with container name, forwarded ports, mapped folders etc~~
 * ~~Create user within container~~
 * ~~Insertion of developer's ssh key in container~~
@@ -22,7 +22,7 @@
 ## Building gem
 ```
 gem build lxdev.gemspec
-gem install lxdev-0.0.1.gem
+gem install lxdev-0.1.0.gem
 ```
 
 ## Config examples
