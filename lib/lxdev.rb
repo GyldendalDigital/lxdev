@@ -105,7 +105,7 @@ class LxDev
       puts "#{@name} doesn't seem to be running."
       exit 1
     end
-    ssh_command = "ssh -o StrictHostKeyChecking=no -t #{@user}@#{get_container_ip} #{args.empty? ? 'bash --noprofile' : "'#{args.join(' ')}'"}"
+    ssh_command = "ssh -o StrictHostKeyChecking=no -t #{@user}@#{get_container_ip} #{args.empty? ? '' : "'#{args.join(' ')}'"}"
     exec ssh_command
   end
 
@@ -211,6 +211,8 @@ class LxDev
     %x{sudo lxc exec #{@name} -- chmod 0700 /home/#{user}/.ssh}
     %x{ssh-add -L | sudo lxc exec #{@name} tee /home/#{user}/.ssh/authorized_keys}
     %x{sudo lxc exec #{@name} -- chown -R #{user} /home/#{user}/.ssh}
+    %x{sudo lxc exec #{@name} -- touch /home/#{@user}/.hushlogin}
+    %x{sudo lxc exec #{@name} -- chown #{user} /home/#{user}/.hushlogin}
     %x{printf "#{user} ALL=(ALL) NOPASSWD: ALL\n" | sudo lxc exec #{@name} -- tee -a /etc/sudoers}
     %x{sudo lxc exec #{@name} -- chmod 0440 /etc/sudoers}
   end
