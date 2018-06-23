@@ -1,7 +1,5 @@
 require 'yaml'
 require 'json'
-require 'pp'
-require 'pry'
 require 'terminal-table'
 
 class LxDev
