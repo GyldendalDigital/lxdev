@@ -27,6 +27,7 @@ halt        Stop the container
 destroy     Destroy the container 
 provision   Run provisioning commands from YAML file
 exec        Run command as root in container
+sudoers     Create a sudoers file, allowing you to use lxdev without entering the sudo password
 EOS
   opt_parser.parse!()
 
@@ -59,6 +60,8 @@ def execute_main_command(lxdev)
     else
       lxdev.execute(command)
     end
+  when 'sudoers'
+    LxDev.create_sudoers_file()
   else
     puts "Unknown command.\nRun \"lxdev --help\" for info"
   end

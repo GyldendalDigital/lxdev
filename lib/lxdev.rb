@@ -5,7 +5,7 @@ require 'pry'
 require 'terminal-table'
 
 class LxDev
-  WHITELISTED_COMMANDS = ["lxc", "redir"]
+  WHITELISTED_SUDO_COMMANDS = ["lxc", "redir", "kill"]
   SHELLS = ["bash", "zsh", "sh", "csh", "tcsh", "ash"]
   BOOT_TIMEOUT = 30
   VERSION = '0.0.1'
@@ -262,5 +262,31 @@ class LxDev
   end
 
   def self.create_sudoers_file
+    user=%x{whoami}.chomp
+    puts <<-EOS
+!! WARNING !!
+This will create a file, /etc/sudoers.d/lxdev,
+which will give your user #{user} access to running
+the following commands :
+ #{WHITELISTED_SUDO_COMMANDS.join(" ")}
+with superuser privileges. If you do not know what you're
+doing, this can be dangerous and insecure.
+
+If you want to do this, type 'yesplease'
+    EOS
+    action = STDIN.gets.chomp
+    unless action == 'yesplease'
+      puts "Not creating sudoers file"
+      return
+    end
+    content = []
+    content << "# Created by lxdev #{Time.now}"
+    WHITELISTED_SUDO_COMMANDS.each do |cmd|
+      cmd_with_path=%x{which #{cmd}}.chomp
+      content << "#{user} ALL=(root) NOPASSWD: #{cmd_with_path}"
+    end
+    %x{printf '#{content.join("\n")}\n' | sudo tee /etc/sudoers.d/lxdev}
+    %x{sudo chmod 0440 /etc/sudoers.d/lxdev}
+    puts "Created sudoers file."
   end
 end
