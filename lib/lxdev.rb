@@ -6,6 +6,7 @@ require 'terminal-table'
 
 class LxDev
   WHITELISTED_COMMANDS = ["lxc", "redir"]
+  SHELLS = ["bash", "zsh", "sh", "csh", "tcsh", "ash"]
   BOOT_TIMEOUT = 30
   VERSION = '0.0.1'
 
@@ -110,6 +111,17 @@ class LxDev
     exec ssh_command
   end
 
+  def execute(command, interactive: false)
+    if interactive
+      exec("sudo lxc exec #{@name} #{command}") # execution stops here and gives control to exec
+    end
+    IO.popen("sudo lxc exec #{@name} -- /bin/sh -c '#{command}'", err: [:child, :out]) do |cmd_output|
+      cmd_output.each do |line|
+        puts line
+      end
+    end
+  end
+
   def provision
     ensure_container_created
     if get_container_status.first['status'] != 'Running'
@@ -124,11 +136,7 @@ class LxDev
     puts "Provisioning #{@name}..."
     STDOUT.sync = true
     provisioning.each do |cmd|
-      IO.popen("sudo lxc exec #{@name} -- /bin/sh -c '#{cmd}'", err: [:child, :out]) do |cmd_output|
-        cmd_output.each do |line|
-          puts line
-        end
-      end
+      execute cmd
     end
     STDOUT.sync = false
   end
