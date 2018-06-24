@@ -1,3 +1,5 @@
+[![Gem Version](https://badge.fury.io/rb/lxdev.svg)](https://badge.fury.io/rb/lxdev)
+
 # LxDev
 ###### Automagic dev environment using LXD
 
