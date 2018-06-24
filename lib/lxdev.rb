@@ -57,6 +57,13 @@ class LxDev
       @ports.each do |guest,host|
         t.add_row ['Forwarded port', "guest: #{guest} host: #{host}"]
       end
+      if container_status.first['snapshots']
+        t.add_separator
+        t.add_row ['Snapshots', '']
+      end
+      container_status.first['snapshots'].each do |snapshot|
+        t.add_row [snapshot['name'].partition('/').last, snapshot['created_at']]
+      end
     end
     puts table
   end
@@ -131,12 +138,43 @@ class LxDev
       puts "Nothing to do"
       return
     end
+    if @config['box']['auto_snapshots']
+      snapshot_name = "provision_#{Time.now.to_i}"
+      snapshot(snapshot_name)
+    end
     puts "Provisioning #{@name}..."
     STDOUT.sync = true
     provisioning.each do |cmd|
       execute cmd
     end
     STDOUT.sync = false
+  end
+
+  def snapshot(snapshot_name)
+    puts "Creating snapshot #{snapshot_name}"
+    %x{sudo lxc snapshot #{@name} #{snapshot_name}}
+  end
+
+  def restore(snapshot_name)
+    puts "Restoring snapshot #{snapshot_name}"
+    %x{sudo lxc restore #{@name} #{snapshot_name}}
+    $?.exitstatus == 0
+  end
+
+  def rmsnapshot(snapshot_name)
+    puts "Deleting snapshot #{snapshot_name}"
+    %x{sudo lxc delete #{@name}/#{snapshot_name}}
+    $?.exitstatus == 0
+  end
+
+  def revert
+    snapshot = get_container_status.first['snapshots'].last
+    snapshot_name = snapshot['name'].partition('/').last
+    if restore(snapshot_name)
+      puts "Reverted to snapshot #{snapshot_name}"
+      puts "Deleting snapshot"
+      rmsnapshot(snapshot_name)
+    end
   end
 
   private
@@ -254,6 +292,17 @@ class LxDev
       absolute_path = %x{readlink -f #{host}}.chomp
       %x{sudo lxc config device add #{@name} shared_folder_#{counter} disk source=#{absolute_path} path=#{guest}}
     end
+  end
+
+  def get_snapshots
+    snapshots = []
+    get_container_status.first['snapshots'].each do |snapshot|
+      result = {}
+      result['name'] = snapshot['name']
+      result['date'] = snapshot['created_at']
+      snapshots << result
+    end
+    snapshots
   end
 
   def abort_boot
