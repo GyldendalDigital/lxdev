@@ -50,11 +50,10 @@ box:
   ports:
     3000: 3000
   folders:
-    ".": "/home/huba/lxdev"
+    ".": "/home/vagrant/lxdev"
   provisioning:
-    - apt-get update && apt-get install -y puppet
-    - mkdir -p /tmp/vagrant-puppet
-    - test -d /tmp/vagrant-puppet/manifests || cp -R /home/huba/lxdev/manifests /tmp/vagrant-puppet
+    - dpkg -l | grep -q puppet || (apt-get update && apt-get install -y puppet)
+    - mkdir -p /tmp/vagrant-puppet && rsync -rtv /home/vagrant/lxdev/manifests /tmp/vagrant-puppet/
     - puppet apply /tmp/vagrant-puppet/manifests/lxdev.pp
 ```
 
