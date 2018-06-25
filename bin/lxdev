@@ -27,6 +27,10 @@ halt        Stop the container
 destroy     Destroy the container 
 provision   Run provisioning commands from YAML file
 exec        Run command as root in container
+snapshot    Snapshots the container. Takes a snapshot name as parameter.
+rmsnapshot  Deletes a snapshot. Takes a snapshot name as parameter.
+restore     Restore container to a snapshot with a previous state. Takes a snapshot name as parameter.
+revert      Restore container to the last snapshot taken.
 sudoers     Create a sudoers file, allowing you to use lxdev without entering the sudo password
 EOS
   opt_parser.parse!()
@@ -62,6 +66,29 @@ def execute_main_command(lxdev)
     end
   when 'sudoers'
     LxDev.create_sudoers_file()
+  when 'snapshot'
+    snapshot_name = ARGV[1]
+    if snapshot_name.nil?
+      puts "Needs a snapshot name!"
+      exit 1
+    end
+    lxdev.snapshot(snapshot_name)
+  when 'restore'
+    snapshot_name = ARGV[1]
+    if snapshot_name.nil?
+      puts "Needs a snapshot name!"
+      exit 1
+    end
+    lxdev.restore(snapshot_name)
+  when 'revert'
+    lxdev.revert()
+  when 'rmsnapshot'
+    snapshot_name = ARGV[1]
+    if snapshot_name.nil?
+      puts "Needs a snapshot name!"
+      exit 1
+    end
+    lxdev.rmsnapshot(snapshot_name)
   else
     puts "Unknown command.\nRun \"lxdev --help\" for info"
   end
