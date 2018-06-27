@@ -112,13 +112,12 @@ class LxDev
       puts "#{@name} doesn't seem to be running."
       exit 1
     end
-    ssh_command = "ssh -o StrictHostKeyChecking=no -t #{@user}@#{get_container_ip} #{args.empty? ? '' : "'#{args.join(' ')}'"}"
-    exec ssh_command
+    execute_command('ssh', "-o", "StrictHostKeyChecking=no", "-t", "#{@user}@#{get_container_ip}", *args, interactive: true)
   end
 
   def execute(command, interactive: false)
     if interactive
-      exec("sudo lxc exec #{@name} #{command}") # execution stops here and gives control to exec
+      lxc_exec(command, interactive: true)
     end
     IO.popen("sudo lxc exec #{@name} -- /bin/sh -c '#{command}'", err: [:child, :out]) do |cmd_output|
       cmd_output.each do |line|
@@ -210,12 +209,12 @@ class LxDev
 
   def start_container
     puts "Starting #{@name}..."
-    %x{sudo lxc start #{@name}}
+    execute_command('lxc', 'start', @name, sudo_privileges: true)
   end
 
   def get_container_status
     return @status unless @status.nil?
-    container_status = %x{sudo lxc list #{@name} --format=json}
+    container_status = execute_command('lxc', 'list', @name, '--format=json',capture_output: true, sudo_privileges: true)
     @status = JSON.parse(container_status)
   end
 
@@ -227,18 +226,16 @@ class LxDev
 
   def add_subuid_and_subgid
     need_restart = false
-    %x{grep -q 'root:#{@uid}:1' /etc/subuid}
-    if $?.exitstatus != 0
-      %x{echo 'root:#{@uid}:1' | sudo tee -a /etc/subuid}
+    unless execute_command("grep -q 'root:#{@uid}:1' /etc/subuid")
+      execute_command("echo 'root:#{@uid}:1' | sudo tee -a /etc/subuid")
       need_restart = true
     end
-    %x{grep -q 'root:#{@gid}:1' /etc/subgid}
-    if $?.exitstatus != 0
-      %x{echo 'root:#{@gid}:1' | sudo tee -a /etc/subgid}
+    unless execute_command("grep -q 'root:#{@gid}:1' /etc/subgid")
+      execute_command("echo 'root:#{@gid}:1' | sudo tee -a /etc/subgid")
       need_restart = true
     end
     if need_restart
-      %x{sudo systemctl restart lxd.service}
+      execute_command("systemct", "restart", "lxd.service", sudo_privileges: true)
     end
   end
 
@@ -280,7 +277,7 @@ class LxDev
       return
     end
     @state['redir_pids'].each do |pid|
-      %x{sudo kill #{pid}}
+      execute_command('kill', pid, sudo_privileges: true)
     end
   end
 
@@ -289,8 +286,10 @@ class LxDev
     folders.each do |host, guest|
       counter = counter + 1
       puts "Mounting #{host} in #{guest}"
-      absolute_path = %x{readlink -f #{host}}.chomp
-      %x{sudo lxc config device add #{@name} shared_folder_#{counter} disk source=#{absolute_path} path=#{guest}}
+      absolute_path = execute_command("readlink", "-f", host, capture_output: true).chomp
+      execute_command("lxc", "config", "device add",
+                      @name, "shared_folder_#{counter}", "disk", "source=#{absolute_path}",
+                      "path=#{guest}", sudo_privileges: true)
     end
   end
 
@@ -303,6 +302,30 @@ class LxDev
       snapshots << result
     end
     snapshots
+  end
+
+  def lxc_exec(command, *args, interactive: false)
+    execute_command("lxc", "exec", @name, command, *args, interactive: interactive, sudo_privileges: true)
+  end
+
+  def execute_command(command, *args, interactive: false, sudo_privileges: false, capture_output: false)
+    if interactive
+      if sudo_privileges
+       exec("sudo", command, *args)
+      else
+        exec(command, *args)
+      end
+    else
+      if sudo_privileges
+        command = "sudo #{command}"
+      end
+      output = %x{#{command} #{args.join(" ")}}
+      if capture_output
+        return output
+      else
+        return $?.success?
+      end
+    end
   end
 
   def abort_boot
