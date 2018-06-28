@@ -13,7 +13,7 @@ module LxDev
     def initialize
       @uid    = System.exec("id -u").output.chomp
       @gid    = System.exec("id -g").output.chomp
-      @config = YAML.load_file('lxdev.yml')
+      @config = get_config
       @name   = @config['box']['name']
       @image  = @config['box']['image']
       @user   = @config['box']['user']
@@ -26,7 +26,7 @@ module LxDev
       end
     rescue Errno::ENOENT
       puts "lxdev.yml not found"
-      exit 1
+      System.exit 1
     end
 
     def self.setup
@@ -40,6 +40,10 @@ module LxDev
         return false
       end
       return lxdev
+    end
+
+    def get_config
+      YAML.load_file('lxdev.yml')
     end
 
     def save_state
@@ -88,7 +92,7 @@ module LxDev
       do_provision = false
       unless @state.empty?
         puts "Container state .lxdev/state exists, is it running? If not it might have stopped unexpectedly. Please remove the file before starting."
-        exit 1
+        System.exit 1
       end
       if get_container_status.empty?
         create_container
@@ -96,7 +100,7 @@ module LxDev
       else
         if get_container_status.first['status'] == 'Running'
           puts "#{@name} is already running!"
-          exit 1
+          System.exit 1
         else
           start_container
         end
@@ -126,7 +130,7 @@ module LxDev
       host = get_container_ip
       if host.nil?
         puts "#{@name} doesn't seem to be running."
-        exit 1
+        System.exit 1
       end
       ssh_command = "ssh -o StrictHostKeyChecking=no -t #{@user}@#{get_container_ip} #{args.empty? ? '' : "'#{args.join(' ')}'"}"
       exec ssh_command
@@ -147,7 +151,7 @@ module LxDev
       ensure_container_created
       if get_container_status.first['status'] != 'Running'
         puts "#{@name} is not running!"
-        exit 1
+        System.exit 1
       end
       provisioning = @config['box']['provisioning']
       if provisioning.nil?
@@ -204,7 +208,7 @@ module LxDev
       container_status = get_container_status
       unless container_status.size > 0
         puts "Container not created yet. Run lxdev up"
-        exit(0)
+        System.exit(0)
       end
     end
 
@@ -322,7 +326,7 @@ module LxDev
 
     def abort_boot
       puts "Timeout waiting for container to boot"
-      exit 1
+      System.exit 1
     end
 
     def self.create_sudoers_file

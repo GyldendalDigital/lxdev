@@ -15,5 +15,9 @@ module LxDev
     def self.spawn_exec(cmd)
       spawn(cmd)
     end
+
+    def self.exit(exitcode = 0)
+      Kernel.exit(exitcode)
+    end
   end
 end
