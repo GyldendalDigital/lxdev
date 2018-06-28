@@ -59,7 +59,7 @@ module LxDev
         @ports.each do |guest, host|
           t.add_row ['Forwarded port', "guest: #{guest} host: #{host}"]
         end
-        if container_status.first['snapshots']
+        if container_status.first['snapshots'].any?
           t.add_separator
           t.add_row ['Snapshots', '']
         end
