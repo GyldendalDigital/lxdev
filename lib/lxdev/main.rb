@@ -34,11 +34,25 @@ module LxDev
         puts "Please run 'lxd init' and configure LXD first"
         return false
       end
-      return Main.new
+      lxdev = Main.new
+      unless lxdev.set_ssh_keys
+        puts "No ssh keys detected. Make sure you have an ssh key, a running agent, and the key added to the agent, e.g. with ssh-add."
+        return false
+      end
+      return lxdev
     end
 
     def save_state
       File.open('.lxdev/state', 'w') {|f| f.write @state.to_yaml} unless @state.empty?
+    end
+
+    def set_ssh_keys
+      ssh_keys = System.exec("ssh-add -L").output
+      if ssh_keys[0..3] == 'ssh-'
+        @ssh_keys = ssh_keys
+      else
+        nil
+      end
     end
 
     def status
@@ -248,7 +262,7 @@ module LxDev
       System.exec("sudo lxc exec #{@name} -- useradd --uid 1001 --gid 1001 -s /bin/bash -m #{user}")
       System.exec("sudo lxc exec #{@name} -- mkdir /home/#{user}/.ssh")
       System.exec("sudo lxc exec #{@name} -- chmod 0700 /home/#{user}/.ssh")
-      System.exec("ssh-add -L | sudo lxc exec #{@name} tee /home/#{user}/.ssh/authorized_keys")
+      System.exec("printf '#{@ssh_keys}' | sudo lxc exec #{@name} tee /home/#{user}/.ssh/authorized_keys")
       System.exec("sudo lxc exec #{@name} -- chown -R #{user} /home/#{user}/.ssh")
       System.exec("sudo lxc exec #{@name} -- touch /home/#{@user}/.hushlogin")
       System.exec("sudo lxc exec #{@name} -- chown #{user} /home/#{user}/.hushlogin")
