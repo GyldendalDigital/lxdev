@@ -89,6 +89,8 @@ module LxDev
     end
 
     def up
+      binding.pry
+      puts ""
       do_provision = false
       unless @state.empty?
         puts "Container state .lxdev/state exists, is it running? If not it might have stopped unexpectedly. Please remove the file before starting."
