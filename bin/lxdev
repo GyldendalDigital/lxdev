@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-require 'lxdev'
+require 'lxdev/main'
 require 'optparse'
 
 def option_parser
@@ -12,7 +12,7 @@ def option_parser
     end
 
     opts.on("-v", "--version", "Prints the version") do
-      puts "Version #{LxDev::VERSION}"
+      puts "Version #{LxDev::Main::VERSION}"
       exit
     end
 
@@ -59,13 +59,13 @@ def execute_main_command(lxdev)
     lxdev.provision()
   when 'exec'
     command = ARGV[1..-1].join(" ")
-    if LxDev::SHELLS.include?(command)
+    if LxDev::Main::SHELLS.include?(command)
       lxdev.execute(command, interactive: true)
     else
       lxdev.execute(command)
     end
   when 'sudoers'
-    LxDev.create_sudoers_file()
+    LxDev::Main.create_sudoers_file()
   when 'snapshot'
     snapshot_name = ARGV[1]
     if snapshot_name.nil?
@@ -97,7 +97,7 @@ end
 
 
 option_parser
-lxdev = LxDev.setup()
+lxdev = LxDev::Main.setup()
 if lxdev
   execute_main_command(lxdev)
   lxdev.save_state
