@@ -253,7 +253,11 @@ module LxDev
         need_restart = true
       end
       if need_restart
-        System.exec("sudo systemctl restart lxd.service")
+        begin
+          System.exec("sudo systemctl restart #{lxd_service_name}")
+        rescue
+          puts "The LXD service needs to be restarted, but the service name cannot be detected. Please restart it manually."
+        end
       end
     end
 
@@ -323,6 +327,16 @@ module LxDev
     def abort_boot
       puts "Timeout waiting for container to boot"
       exit 1
+    end
+
+    def lxd_service_name
+      if System.exec("sudo systemctl status lxd.service").exitstatus == 0
+        'lxd.service'
+      elsif System.exec("sudo systemctl status snap.lxd.daemon.service").exitstatus == 0
+        'snap.lxd.daemon.service'
+      else
+        raise 'There seems to be no LXD service on the system!'
+      end
     end
 
     def self.create_sudoers_file
