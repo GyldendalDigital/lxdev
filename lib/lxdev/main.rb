@@ -30,6 +30,7 @@ module LxDev
     end
 
     def self.setup
+      self.check_requirements
       unless lxd_initialized?
         puts "Please run 'lxd init' and configure LXD first"
         return false
@@ -339,8 +340,25 @@ module LxDev
       end
     end
 
+    def self.check_requirements
+      WHITELISTED_SUDO_COMMANDS.each do |cmd|
+        unless System.exec("which #{cmd}").exitstatus == 0
+          puts "The command '#{cmd}' is not installed or not available."
+          puts "Please install it before continuing."
+          exit 1
+        end
+      end
+    end
+
     def self.create_sudoers_file
+      self.check_requirements
       user = System.exec("whoami").output.chomp
+      content = []
+      content << "# Created by lxdev #{Time.now}"
+      WHITELISTED_SUDO_COMMANDS.each do |cmd|
+        cmd_with_path = System.exec("which #{cmd}").output.chomp
+        content << "#{user} ALL=(root) NOPASSWD: #{cmd_with_path}"
+      end
       puts <<-EOS
 !! WARNING !!
 This will create a file, /etc/sudoers.d/lxdev,
@@ -350,18 +368,15 @@ the following commands :
 with superuser privileges. If you do not know what you're
 doing, this can be dangerous and insecure.
 
-If you want to do this, type 'yesplease'
       EOS
+      puts "The following content will be created in /etc/sudoers.d/lxdev :"
+      puts
+      puts content
+      puts "\nIf you want to do this, type 'yesplease'"
       action = STDIN.gets.chomp
       unless action == 'yesplease'
         puts "Not creating sudoers file"
         return
-      end
-      content = []
-      content << "# Created by lxdev #{Time.now}"
-      WHITELISTED_SUDO_COMMANDS.each do |cmd|
-        cmd_with_path = System.exec("which #{cmd}").output.chomp
-        content << "#{user} ALL=(root) NOPASSWD: #{cmd_with_path}"
       end
       System.exec(%{printf '#{content.join("\n")}\n' | sudo tee /etc/sudoers.d/lxdev})
       System.exec("sudo chmod 0440 /etc/sudoers.d/lxdev")
