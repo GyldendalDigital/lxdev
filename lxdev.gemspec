@@ -6,7 +6,7 @@ require "lxdev/system"
 Gem::Specification.new do |spec|
   spec.name        = 'lxdev'
   spec.version     = LxDev::Main::VERSION
-  spec.date        = '2018-08-06'
+  spec.date        = Time.now.strftime("%Y-%m-%d")
   spec.summary     = 'Automagic development environment with LXD'
   spec.description = 'Lightweight vagrant-like system using LXD'
   spec.files       = ["lib/lxdev/main.rb", "lib/lxdev/system.rb"]
