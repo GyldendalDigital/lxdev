@@ -2,6 +2,7 @@ require 'yaml'
 require 'json'
 require 'terminal-table'
 require 'lxdev/system'
+require 'tempfile'
 
 module LxDev
   class Main
@@ -359,6 +360,7 @@ module LxDev
         cmd_with_path = System.exec("which #{cmd}").output.chomp
         content << "#{user} ALL=(root) NOPASSWD: #{cmd_with_path}"
       end
+      content << "\n"
       puts <<-EOS
 !! WARNING !!
 This will create a file, /etc/sudoers.d/lxdev,
@@ -378,8 +380,17 @@ doing, this can be dangerous and insecure.
         puts "Not creating sudoers file"
         return
       end
-      System.exec(%{printf '#{content.join("\n")}\n' | sudo tee /etc/sudoers.d/lxdev})
-      System.exec("sudo chmod 0440 /etc/sudoers.d/lxdev")
+      temp_file = Tempfile.create('lxdev-sudoers')
+      temp_file.write(content.join("\n"))
+      temp_file_name = temp_file.to_path
+      temp_file.close
+      unless System.exec("visudo -c -f #{temp_file_name}").exitstatus == 0
+        puts "Generated sudoers file contains errors, aborting."
+        exit 1
+      end
+      System.exec("sudo chown root:root #{temp_file_name}")
+      System.exec("sudo chmod 0440 #{temp_file_name}")
+      System.exec("sudo mv #{temp_file_name} /etc/sudoers.d/lxdev")
       puts "Created sudoers file."
     end
   end
