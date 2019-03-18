@@ -9,7 +9,7 @@ module LxDev
     WHITELISTED_SUDO_COMMANDS = ["lxc", "redir", "kill"]
     SHELLS                    = ["bash", "zsh", "sh", "csh", "tcsh", "ash"]
     BOOT_TIMEOUT              = 30
-    VERSION                   = '0.1.3'
+    VERSION                   = '0.1.4'
 
     def initialize(config_file)
       @uid    = System.exec("id -u").output.chomp
