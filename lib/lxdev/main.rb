@@ -11,10 +11,10 @@ module LxDev
     BOOT_TIMEOUT              = 30
     VERSION                   = '0.1.3'
 
-    def initialize
+    def initialize(config_file)
       @uid    = System.exec("id -u").output.chomp
       @gid    = System.exec("id -g").output.chomp
-      @config = YAML.load_file('lxdev.yml')
+      @config = YAML.load_file(config_file)
       @name   = @config['box']['name']
       @image  = @config['box']['image']
       @user   = @config['box']['user']
@@ -26,17 +26,17 @@ module LxDev
         @state = Hash.new
       end
     rescue Errno::ENOENT
-      puts "lxdev.yml not found"
+      puts "#{config_file} not found"
       exit 1
     end
 
-    def self.setup
+    def self.setup(config_file = 'lxdev.yml')
       self.check_requirements
       unless lxd_initialized?
         puts "Please run 'lxd init' and configure LXD first"
         return false
       end
-      lxdev = Main.new
+      lxdev = Main.new(config_file)
       unless lxdev.set_ssh_keys
         puts "No ssh keys detected. Make sure you have an ssh key, a running agent, and the key added to the agent, e.g. with ssh-add."
         return false
