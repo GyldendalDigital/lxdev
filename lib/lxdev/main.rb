@@ -11,7 +11,8 @@ module LxDev
     BOOT_TIMEOUT              = 30
     VERSION                   = '0.1.4'
 
-    def initialize(config_file)
+    def initialize(config_file, state_file)
+      @state_file = format(".lxdev/%s", state_file)
       @uid    = System.exec("id -u").output.chomp
       @gid    = System.exec("id -g").output.chomp
       @config = YAML.load_file(config_file)
@@ -21,7 +22,7 @@ module LxDev
       @ports  = @config['box']['ports'] || {}
       Dir.mkdir('.lxdev') unless File.directory?('.lxdev')
       begin
-        @state = YAML.load_file('.lxdev/state')
+        @state = YAML.load_file(@state_file)
       rescue
         @state = Hash.new
       end
@@ -30,13 +31,13 @@ module LxDev
       exit 1
     end
 
-    def self.setup(config_file = 'lxdev.yml')
+    def self.setup(config_file = 'lxdev.yml', state_file = 'state')
       self.check_requirements
       unless lxd_initialized?
         puts "Please run 'lxd init' and configure LXD first"
         return false
       end
-      lxdev = Main.new(config_file)
+      lxdev = Main.new(config_file, state_file)
       unless lxdev.set_ssh_keys
         puts "No ssh keys detected. Make sure you have an ssh key, a running agent, and the key added to the agent, e.g. with ssh-add."
         return false
@@ -45,7 +46,7 @@ module LxDev
     end
 
     def save_state
-      File.open('.lxdev/state', 'w') {|f| f.write @state.to_yaml} unless @state.empty?
+      File.open(@state_file, 'w') {|f| f.write @state.to_yaml} unless @state.empty?
     end
 
     def set_ssh_keys
@@ -89,7 +90,7 @@ module LxDev
     def up
       do_provision = false
       unless @state.empty?
-        puts "Container state .lxdev/state exists, is it running? If not it might have stopped unexpectedly. Please remove the file before starting."
+        puts "Container state #{@state_file} exists, is it running? If not it might have stopped unexpectedly. Please remove the file before starting."
         exit 1
       end
       if get_container_status.empty?
@@ -211,7 +212,7 @@ module LxDev
     end
 
     def remove_state
-      File.delete('.lxdev/state') if File.exists?('.lxdev/state')
+      File.delete(@state_file) if File.exists?(@state_file)
       @state = {}
     end
 

@@ -3,6 +3,7 @@ require 'lxdev/main'
 require 'optparse'
 
 $config_file = 'lxdev.yml'
+$state_file = 'state'
 
 def option_parser
   opt_parser = OptionParser.new do |opts|
@@ -19,9 +20,9 @@ def option_parser
     end
 
     opts.on("-c F", "--config F", String, "Specify config file, defaults to lxdev.yml") do |filename|
-      puts filename
       unless filename.nil?
         $config_file = filename
+        $state_file = format("%s_%s", 'state', File.basename($config_file, '.yml'))
       end
     end
 
@@ -106,7 +107,7 @@ end
 
 
 option_parser
-lxdev = LxDev::Main.setup($config_file)
+lxdev = LxDev::Main.setup($config_file, $state_file)
 if lxdev
   execute_main_command(lxdev)
   lxdev.save_state
