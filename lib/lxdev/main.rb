@@ -235,7 +235,7 @@ module LxDev
 
     def get_container_status
       return @status unless @status.nil?
-      command_result = System.exec("sudo lxc list #{@name} --format=json")
+      command_result = System.exec("sudo lxc list ^#{@name}$ --format=json")
       @status = JSON.parse(command_result.output)
     end
 
