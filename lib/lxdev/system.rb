@@ -12,8 +12,12 @@ module LxDev
       return_object
     end
 
-    def self.spawn_exec(cmd)
-      spawn(cmd)
+    def self.spawn_exec(cmd, silent: false)
+      if silent
+        spawn(cmd, [:out, :err] => "/dev/null")
+      else
+        spawn(cmd)
+      end
     end
   end
 end
