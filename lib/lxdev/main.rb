@@ -290,7 +290,7 @@ module LxDev
       redir_pids = []
       ports.each do |guest, host|
         puts "Forwarding #{get_container_ip}:#{guest} to local port #{host}"
-        pid = System.spawn_exec("sudo redir --caddr=#{get_container_ip} --cport=#{guest} --lport=#{host}")
+        pid = System.spawn_exec("sudo redir --caddr=#{get_container_ip} --cport=#{guest} --lport=#{host}", silent: true)
         redir_pids << pid
         Process.detach(pid)
       end
