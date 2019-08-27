@@ -221,6 +221,7 @@ module LxDev
       puts "Launching #{@name}..."
       System.exec("sudo lxc init #{@image} #{@name}")
       System.exec(%{printf "uid #{@uid} 1001\ngid #{@gid} 1001"| sudo lxc config set #{@name} raw.idmap -})
+      System.exec(%{sudo lxc config set #{@name} boot.autostart false})
       System.exec("sudo lxc start #{@name}")
       puts "Creating user #{@user}..."
       create_container_user(@user)
