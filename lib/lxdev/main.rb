@@ -9,7 +9,7 @@ module LxDev
     WHITELISTED_SUDO_COMMANDS = ["lxc", "redir", "kill"]
     SHELLS                    = ["bash", "zsh", "sh", "csh", "tcsh", "ash"]
     BOOT_TIMEOUT              = 30
-    VERSION                   = '0.1.7'
+    VERSION                   = '0.1.8'
 
     def initialize(config_file, state_file)
       @state_file = format(".lxdev/%s", state_file)
