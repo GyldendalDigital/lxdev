@@ -7,7 +7,7 @@ require 'etc'
 
 module LxDev
   class Main
-    WHITELISTED_SUDO_COMMANDS = ["lxc", "redir", "kill"]
+    REQUIRED_COMMANDS = ["lxc", "redir", "kill"]
     SHELLS                    = ["bash", "zsh", "sh", "csh", "tcsh", "ash"]
     BOOT_TIMEOUT              = 30
     VERSION                   = '0.1.8'
@@ -302,7 +302,7 @@ module LxDev
       redir_pids = []
       ports.each do |guest, host|
         puts "Forwarding #{get_container_ip}:#{guest} to local port #{host}"
-        pid = System.spawn_exec("sudo redir --caddr=#{get_container_ip} --cport=#{guest} --lport=#{host}", silent: true)
+        pid = System.spawn_exec("redir --caddr=#{get_container_ip} --cport=#{guest} --lport=#{host}", silent: true)
         redir_pids << pid
         Process.detach(pid)
       end
@@ -314,7 +314,7 @@ module LxDev
         return
       end
       @state['redir_pids'].each do |pid|
-        System.exec("sudo kill #{pid}")
+        System.exec("kill #{pid}")
       end
     end
 
@@ -345,9 +345,9 @@ module LxDev
     end
 
     def lxd_service_name
-      if System.exec("sudo systemctl status lxd.service").exitstatus == 0
+      if System.exec("systemctl status lxd.service").exitstatus == 0
         'lxd.service'
-      elsif System.exec("sudo systemctl status snap.lxd.daemon.service").exitstatus == 0
+      elsif System.exec("systemctl status snap.lxd.daemon.service").exitstatus == 0
         'snap.lxd.daemon.service'
       else
         raise 'There seems to be no LXD service on the system!'
@@ -355,56 +355,13 @@ module LxDev
     end
 
     def self.check_requirements
-      WHITELISTED_SUDO_COMMANDS.each do |cmd|
+      REQUIRED_COMMANDS.each do |cmd|
         unless System.exec("which #{cmd}").exitstatus == 0
           puts "The command '#{cmd}' is not installed or not available."
           puts "Please install it before continuing."
           exit 1
         end
       end
-    end
-
-    def self.create_sudoers_file
-      self.check_requirements
-      user = System.exec("whoami").output.chomp
-      content = []
-      content << "# Created by lxdev #{Time.now}"
-      WHITELISTED_SUDO_COMMANDS.each do |cmd|
-        cmd_with_path = System.exec("which #{cmd}").output.chomp
-        content << "#{user} ALL=(root) NOPASSWD: #{cmd_with_path}"
-      end
-      content << "\n"
-      puts <<-EOS
-!! WARNING !!
-This will create a file, /etc/sudoers.d/lxdev,
-which will give your user #{user} access to running
-the following commands :
- #{WHITELISTED_SUDO_COMMANDS.join(" ")}
-with superuser privileges. If you do not know what you're
-doing, this can be dangerous and insecure.
-
-      EOS
-      puts "The following content will be created in /etc/sudoers.d/lxdev :"
-      puts
-      puts content
-      puts "\nIf you want to do this, type 'yesplease'"
-      action = STDIN.gets.chomp
-      unless action == 'yesplease'
-        puts "Not creating sudoers file"
-        return
-      end
-      temp_file = Tempfile.create('lxdev-sudoers')
-      temp_file.write(content.join("\n"))
-      temp_file_name = temp_file.to_path
-      temp_file.close
-      unless System.exec("visudo -c -f #{temp_file_name}").exitstatus == 0
-        puts "Generated sudoers file contains errors, aborting."
-        exit 1
-      end
-      System.exec("sudo chown root:root #{temp_file_name}")
-      System.exec("sudo chmod 0440 #{temp_file_name}")
-      System.exec("sudo mv #{temp_file_name} /etc/sudoers.d/lxdev")
-      puts "Created sudoers file."
     end
   end
 end
