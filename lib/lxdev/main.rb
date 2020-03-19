@@ -3,6 +3,7 @@ require 'json'
 require 'terminal-table'
 require 'lxdev/system'
 require 'tempfile'
+require 'etc'
 
 module LxDev
   class Main
@@ -20,6 +21,7 @@ module LxDev
       @image  = @config['box']['image']
       @user   = @config['box']['user']
       @ports  = @config['box']['ports'] || {}
+      @lxc_command = (user_in_lxd_group? ? "lxc" : "sudo lxd")
       Dir.mkdir('.lxdev') unless File.directory?('.lxdev')
       begin
         @state = YAML.load_file(@state_file)
@@ -43,6 +45,15 @@ module LxDev
         return false
       end
       return lxdev
+    end
+
+    def user_in_lxd_group?
+      begin
+        Etc.getgrnam("lxd").mem.include?(Etc.getlogin)
+      rescue ArgumentError
+        puts "There seems to be no 'lxd' group. Is LXD installed?"
+        false
+      end
     end
 
     def save_state
@@ -114,14 +125,14 @@ module LxDev
 
     def halt
       ensure_container_created
-      System.exec("sudo lxc stop #{@name}")
+      System.exec("#{@lxc_command} stop #{@name}")
       cleanup_forwarded_ports
       remove_state
     end
 
     def destroy
       ensure_container_created
-      System.exec("sudo lxc delete #{@name}")
+      System.exec("#{@lxc_command} delete #{@name}")
     end
 
     def ssh(args)
@@ -137,9 +148,9 @@ module LxDev
 
     def execute(command, interactive: false)
       if interactive
-        exec("sudo lxc exec #{@name} #{command}") # execution stops here and gives control to exec
+        exec("#{@lxc_command} exec #{@name} #{command}") # execution stops here and gives control to exec
       end
-      IO.popen("sudo lxc exec #{@name} -- /bin/sh -c '#{command}'", err: [:child, :out]) do |cmd_output|
+      IO.popen("#{@lxc_command} exec #{@name} -- /bin/sh -c '#{command}'", err: [:child, :out]) do |cmd_output|
         cmd_output.each do |line|
           puts line
         end
@@ -171,18 +182,18 @@ module LxDev
 
     def snapshot(snapshot_name)
       puts "Creating snapshot #{snapshot_name}"
-      System.exec("sudo lxc snapshot #{@name} #{snapshot_name}")
+      System.exec("#{@lxc_command} snapshot #{@name} #{snapshot_name}")
     end
 
     def restore(snapshot_name)
       puts "Restoring snapshot #{snapshot_name}"
-      exitstatus = System.exec("sudo lxc restore #{@name} #{snapshot_name}").exitstatus
+      exitstatus = System.exec("#{@lxc_command} restore #{@name} #{snapshot_name}").exitstatus
       exitstatus == 0
     end
 
     def rmsnapshot(snapshot_name)
       puts "Deleting snapshot #{snapshot_name}"
-      exitstatus = System.exec("sudo lxc delete #{@name}/#{snapshot_name}").exitstatus
+      exitstatus = System.exec("#{@lxc_command} delete #{@name}/#{snapshot_name}").exitstatus
       exitstatus == 0
     end
 
@@ -199,7 +210,7 @@ module LxDev
     private
 
     def self.lxd_initialized?
-      exitstatus = System.exec("sudo lxc info | grep 'lxd init'").exitstatus
+      exitstatus = System.exec("#{@lxc_command} info | grep 'lxd init'").exitstatus
       exitstatus != 0
     end
 
@@ -219,10 +230,10 @@ module LxDev
     def create_container
       add_subuid_and_subgid
       puts "Launching #{@name}..."
-      System.exec("sudo lxc init #{@image} #{@name}")
-      System.exec(%{printf "uid #{@uid} 1001\ngid #{@gid} 1001"| sudo lxc config set #{@name} raw.idmap -})
-      System.exec(%{sudo lxc config set #{@name} boot.autostart false})
-      System.exec("sudo lxc start #{@name}")
+      System.exec("#{@lxc_command} init #{@image} #{@name}")
+      System.exec(%{printf "uid #{@uid} 1001\ngid #{@gid} 1001"| #{@lxc_command} config set #{@name} raw.idmap -})
+      System.exec(%{#{@lxc_command} config set #{@name} boot.autostart false})
+      System.exec("#{@lxc_command} start #{@name}")
       puts "Creating user #{@user}..."
       create_container_user(@user)
       puts "Mapping folders.."
@@ -231,12 +242,12 @@ module LxDev
 
     def start_container
       puts "Starting #{@name}..."
-      System.exec("sudo lxc start #{@name}")
+      System.exec("#{@lxc_command} start #{@name}")
     end
 
     def get_container_status
       return @status unless @status.nil?
-      command_result = System.exec("sudo lxc list ^#{@name}$ --format=json")
+      command_result = System.exec("#{@lxc_command} list ^#{@name}$ --format=json")
       @status = JSON.parse(command_result.output)
     end
 
@@ -266,16 +277,16 @@ module LxDev
     end
 
     def create_container_user(user)
-      System.exec("sudo lxc exec #{@name} -- groupadd --gid 1001 #{user}")
-      System.exec("sudo lxc exec #{@name} -- useradd --uid 1001 --gid 1001 -s /bin/bash -m #{user}")
-      System.exec("sudo lxc exec #{@name} -- mkdir /home/#{user}/.ssh")
-      System.exec("sudo lxc exec #{@name} -- chmod 0700 /home/#{user}/.ssh")
-      System.exec("printf '#{@ssh_keys}' | sudo lxc exec #{@name} tee /home/#{user}/.ssh/authorized_keys")
-      System.exec("sudo lxc exec #{@name} -- chown -R #{user} /home/#{user}/.ssh")
-      System.exec("sudo lxc exec #{@name} -- touch /home/#{@user}/.hushlogin")
-      System.exec("sudo lxc exec #{@name} -- chown #{user} /home/#{user}/.hushlogin")
-      System.exec(%{printf "#{user} ALL=(ALL) NOPASSWD: ALL\n" | sudo lxc exec #{@name} -- tee -a /etc/sudoers})
-      System.exec("sudo lxc exec #{@name} -- chmod 0440 /etc/sudoers")
+      System.exec("#{@lxc_command} exec #{@name} -- groupadd --gid 1001 #{user}")
+      System.exec("#{@lxc_command} exec #{@name} -- useradd --uid 1001 --gid 1001 -s /bin/bash -m #{user}")
+      System.exec("#{@lxc_command} exec #{@name} -- mkdir /home/#{user}/.ssh")
+      System.exec("#{@lxc_command} exec #{@name} -- chmod 0700 /home/#{user}/.ssh")
+      System.exec("printf '#{@ssh_keys}' | #{@lxc_command} exec #{@name} tee /home/#{user}/.ssh/authorized_keys")
+      System.exec("#{@lxc_command} exec #{@name} -- chown -R #{user} /home/#{user}/.ssh")
+      System.exec("#{@lxc_command} exec #{@name} -- touch /home/#{@user}/.hushlogin")
+      System.exec("#{@lxc_command} exec #{@name} -- chown #{user} /home/#{user}/.hushlogin")
+      System.exec(%{printf "#{user} ALL=(ALL) NOPASSWD: ALL\n" | #{@lxc_command} exec #{@name} -- tee -a /etc/sudoers})
+      System.exec("#{@lxc_command} exec #{@name} -- chmod 0440 /etc/sudoers")
     end
 
     def wait_for_boot
@@ -313,7 +324,7 @@ module LxDev
         counter = counter + 1
         puts "Mounting #{host} in #{guest}"
         absolute_path = System.exec("readlink -f #{host}").output.chomp
-        System.exec("sudo lxc config device add #{@name} shared_folder_#{counter} disk source=#{absolute_path} path=#{guest}")
+        System.exec("#{@lxc_command} config device add #{@name} shared_folder_#{counter} disk source=#{absolute_path} path=#{guest}")
       end
     end
 
