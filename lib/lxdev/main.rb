@@ -307,21 +307,34 @@ module LxDev
 
     def forward_ports(ports)
       redir_pids = []
+      sudo_redir_pids = []
       ports.each do |guest, host|
-        puts "Forwarding #{get_container_ip}:#{guest} to local port #{host}"
-        pid = System.spawn_exec("redir --caddr=#{get_container_ip} --cport=#{guest} --lport=#{host}", silent: true)
-        redir_pids << pid
-        Process.detach(pid)
+        if (host > 1024)
+          puts "Forwarding #{get_container_ip}:#{guest} to local port #{host}"
+          pid = System.spawn_exec("redir --caddr=#{get_container_ip} --cport=#{guest} --lport=#{host}", silent: true)
+          redir_pids << pid
+          Process.detach(pid)
+        else
+          puts "Forwarding #{get_container_ip}:#{guest} to local port #{host} (root privileges needed)"
+          pid = System.spawn_exec("sudo redir --caddr=#{get_container_ip} --cport=#{guest} --lport=#{host}", silent: true)
+          sudo_redir_pids << pid
+          Process.detach(pid)
+        end
       end
       @state['redir_pids'] = redir_pids
+      @state['sudo_redir_pids'] = sudo_redir_pids
     end
 
     def cleanup_forwarded_ports
       if @state.empty?
         return
       end
-      @state['redir_pids'].each do |pid|
+      @state['redir_pids']&.each do |pid|
         System.exec("kill #{pid}")
+      end
+      @state['sudo_redir_pids']&.each do |pid|
+        puts "Killing pid #{pid} started with sudo privileges"
+        System.exec("sudo kill #{pid}")
       end
     end
 
