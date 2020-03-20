@@ -12,7 +12,7 @@ module LxDev
     BOOT_TIMEOUT              = 30
     VERSION                   = '0.1.8'
 
-    def initialize(config_file, state_file)
+    def initialize(config_file, state_file, lxc_command)
       @state_file = format(".lxdev/%s", state_file)
       @uid    = System.exec("id -u").output.chomp
       @gid    = System.exec("id -g").output.chomp
@@ -21,7 +21,7 @@ module LxDev
       @image  = @config['box']['image']
       @user   = @config['box']['user']
       @ports  = @config['box']['ports'] || {}
-      @lxc_command = (user_in_lxd_group? ? "lxc" : "sudo lxd")
+      @lxc_command = lxc_command
       Dir.mkdir('.lxdev') unless File.directory?('.lxdev')
       begin
         @state = YAML.load_file(@state_file)
@@ -39,7 +39,14 @@ module LxDev
         puts "Please run 'lxd init' and configure LXD first"
         return false
       end
-      lxdev = Main.new(config_file, state_file)
+      user_in_group = Main.user_in_lxd_group?
+      lxc_command = (user_in_group ? "lxc" : "sudo lxc")
+      unless(user_in_group)
+        puts "Add yourself to the 'lxd' group to avoid entering the sudo password :"
+        puts "(You need to login again afterwards, or start a new login shell)"
+        puts " sudo usermod -a -G lxd #{Etc.getlogin}"
+      end
+      lxdev = Main.new(config_file, state_file, lxc_command)
       unless lxdev.set_ssh_keys
         puts "No ssh keys detected. Make sure you have an ssh key, a running agent, and the key added to the agent, e.g. with ssh-add."
         return false
@@ -47,7 +54,7 @@ module LxDev
       return lxdev
     end
 
-    def user_in_lxd_group?
+    def self.user_in_lxd_group?
       begin
         Etc.getgrnam("lxd").mem.include?(Etc.getlogin)
       rescue ArgumentError
