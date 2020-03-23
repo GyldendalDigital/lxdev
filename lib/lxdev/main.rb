@@ -10,7 +10,7 @@ module LxDev
     REQUIRED_COMMANDS = ["lxc", "redir", "kill"]
     SHELLS                    = ["bash", "zsh", "sh", "csh", "tcsh", "ash"]
     BOOT_TIMEOUT              = 30
-    VERSION                   = '0.1.8'
+    VERSION                   = '0.2.0'
 
     def initialize(config_file, state_file, lxc_command)
       @state_file = format(".lxdev/%s", state_file)
