@@ -28,20 +28,21 @@ def option_parser
 
   end
   opt_parser.separator ""
-  opt_parser.separator <<-EOS
-Commands:
-up          Bring container up
-status      Show status of the container
-ssh         Log into the container
-halt        Stop the container
-destroy     Destroy the container
-provision   Run provisioning commands from YAML file
-exec        Run command as root in container
-snapshot    Snapshots the container. Takes a snapshot name as parameter.
-rmsnapshot  Deletes a snapshot. Takes a snapshot name as parameter.
-restore     Restore container to a snapshot with a previous state. Takes a snapshot name as parameter.
-revert      Restore container to the last snapshot taken.
-EOS
+  opt_parser.separator <<~EOS
+    Commands:
+      up          Bring container up
+      status      Show status of the container
+      ssh         Log into the container
+      halt        Stop the container
+      destroy     Destroy the container
+      provision   Run provisioning commands from YAML file
+      exec        Run command as root in container
+      snapshot    Snapshots the container. Takes a snapshot name as parameter.
+      rmsnapshot  Deletes a snapshot. Takes a snapshot name as parameter.
+      restore     Restore container to a snapshot with a previous state.
+                  Takes a snapshot name as parameter.
+      revert      Restore container to the last snapshot taken.
+  EOS
   opt_parser.parse!()
 
 end
@@ -57,7 +58,7 @@ def execute_main_command(lxdev)
   when 'up'
     lxdev.up()
   when 'status'
-    lxdev.status()
+    puts lxdev.status()
   when 'ssh'
     lxdev.ssh(ARGV[1..-1])
   when 'halt'
@@ -104,8 +105,24 @@ end
 
 
 option_parser
-lxdev = LxDev::Main.setup($config_file, $state_file)
-if lxdev
+
+begin
+  LxDev::Main.check_system
+
+  unless LxDev::Main.user_in_lxd_group?
+    puts(<<~EOS)
+      Add yourself to the 'lxd' group to avoid entering the sudo password every time.
+      $ sudo usermod -a -G lxd #{Etc.getlogin}
+
+      (You need to login again afterwards, or start a new login shell)
+    EOS
+
+    System.use_sudo = true
+  end
+
+  lxdev = LxDev::Main.new($config_file)
   execute_main_command(lxdev)
-  lxdev.save_state
+rescue LxDev::SystemNotReady => e
+  puts(e.message)
+  exit(1)
 end
