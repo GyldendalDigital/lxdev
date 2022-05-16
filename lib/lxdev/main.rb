@@ -10,7 +10,7 @@ module LxDev
     REQUIRED_COMMANDS = ["lxc", "redir", "kill"]
     SHELLS                    = ["bash", "zsh", "sh", "csh", "tcsh", "ash"]
     BOOT_TIMEOUT              = 30
-    VERSION                   = '0.2.0'
+    VERSION                   = '0.2.1'
 
     def initialize(config_file, state_file, lxc_command)
       @state_file = format(".lxdev/%s", state_file)
@@ -255,7 +255,7 @@ module LxDev
     def get_container_status
       return @status unless @status.nil?
       command_result = System.exec("#{@lxc_command} list ^#{@name}$ --format=json")
-      @status = JSON.parse(command_result.output)
+      @status = JSON.parse(command_result.output).select{|c| c["name"] == @name }
     end
 
     def get_container_ip
