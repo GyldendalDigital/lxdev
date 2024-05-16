@@ -10,7 +10,7 @@ module LxDev
     REQUIRED_COMMANDS = ["lxc", "redir", "kill"]
     SHELLS                    = ["bash", "zsh", "sh", "csh", "tcsh", "ash"]
     BOOT_TIMEOUT              = 30
-    VERSION                   = '0.2.0'
+    VERSION                   = '0.2.1'
 
     def initialize(config_file, state_file, lxc_command)
       @state_file = format(".lxdev/%s", state_file)
@@ -230,7 +230,7 @@ module LxDev
     end
 
     def remove_state
-      File.delete(@state_file) if File.exists?(@state_file)
+      File.delete(@state_file) if File.exist?(@state_file)
       @state = {}
     end
 
