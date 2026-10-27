@@ -66,6 +66,11 @@ func run() int {
 		return 1
 	}
 	command, args := args[0], args[1:]
+	// Like the Ruby version, accept "--" to separate lxdev's arguments from
+	// the command passed on to ssh/exec.
+	if len(args) > 0 && args[0] == "--" {
+		args = args[1:]
+	}
 
 	if !knownCommands[command] {
 		fmt.Fprintln(os.Stderr, "Unknown command.\nRun \"lxdev --help\" for info")
